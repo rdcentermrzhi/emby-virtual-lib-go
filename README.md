@@ -68,7 +68,7 @@ library:
    ```
 3. Build:
    ```bash
-   go build -o emby-virtual-lib main.go
+   go build -C proxy -o emby-virtual-lib ./cmd
    ```
 4. Run:
    ```bash

@@ -1,0 +1,48 @@
+{
+    "emby_url": "http://127.0.0.1:8096",
+    "emby_api_key": "b659b1c3d81f439ca2d406308b574808",
+    "log_level": "info",
+    "display_order": [
+        "3",
+        "48",
+        "20260414-1144-6259-0824-000000000001",
+        "20260414-1144-6259-0824-000000000002"
+    ],
+    "hide": [],
+    "library": [
+        {
+            "id": "20260414-1144-6259-0824-000000000001",
+            "name": "黄渤",
+            "resource_type": "person",
+            "resource_id": "103",
+            "image_tag": "68011cc5b23d7d07463f6f05cde74240",
+            "advanced_filter_id": null,
+            "order": 0,
+            "source_library": null,
+            "conditions": null,
+            "cover_custom_zh_font_path": null,
+            "cover_custom_en_font_path": null,
+            "cover_custom_image_path": null
+        },
+        {
+            "id": "20260414-1144-6259-0824-000000000002",
+            "name": "新人",
+            "resource_type": "person",
+            "resource_id": "8",
+            "image_tag": "a245e7598e8efd1476b1f67cae716bff",
+            "advanced_filter_id": null,
+            "order": 0,
+            "source_library": null,
+            "conditions": null,
+            "cover_custom_zh_font_path": null,
+            "cover_custom_en_font_path": null,
+            "cover_custom_image_path": null
+        }
+    ],
+    "advanced_filters": [],
+    "enable_cache": false,
+    "default_cover_style": "style_multi_1",
+    "custom_zh_font_path": "",
+    "custom_en_font_path": "",
+    "custom_image_path": ""
+}

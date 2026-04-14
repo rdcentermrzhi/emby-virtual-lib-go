@@ -66,7 +66,7 @@ library:
    ```
 3. 编译：
    ```bash
-   go build -o emby-virtual-lib main.go
+   go build -C proxy -o emby-virtual-lib ./cmd
    ```
 4. 运行：
    ```bash

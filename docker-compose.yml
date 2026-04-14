@@ -1,15 +1,36 @@
 version: '3.3'
 services:
-    emby-virtual-lib:
-        build: .
-        container_name: emby-virtual-lib
-        volumes:
-            - ./images:/app/images
-            - ./config.yaml:/app/config.yaml
-        ports:
-            - '9098:8000'
-        environment:
-            - TZ=Asia/Shanghai
-            - UID=1000
-            - GID=1001
-        restart: always
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emby-virtual-lib-proxy
+    volumes:
+      - ./images:/app/images
+      - ./config:/app/config
+    ports:
+      - '9098:8000'
+    environment:
+      - TZ=Asia/Shanghai
+      - EMBY_PROXY_RELOAD_TOKEN=change-me-in-production
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile
+    container_name: emby-virtual-lib-admin
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app
+      TZ: Asia/Shanghai
+      PROXY_RELOAD_URL: http://proxy:8000/__internal/reload-config
+      PROXY_RELOAD_TOKEN: change-me-in-production
+    volumes:
+      - ./config:/app/config
+      - ./images:/app/images
+    ports:
+      - '8011:8011'
+    restart: unless-stopped
+    depends_on:
+      - proxy

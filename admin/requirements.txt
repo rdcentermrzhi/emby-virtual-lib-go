@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+aiohttp
+pydantic
+Pillow==10.4.0
+numpy==1.26.4
+python-multipart
+requests
+beautifulsoup4
+lxml
+python-dotenv
