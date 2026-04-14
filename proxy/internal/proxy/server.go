@@ -1,17 +1,34 @@
 package proxy
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"sync/atomic"
+	"time"
 
 	"emby-virtual-lib/proxy/internal/config"
 
 	log "github.com/sirupsen/logrus"
 )
+
+var defaultProxyTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	ForceAttemptHTTP2:     true,
+	MaxIdleConns:          200,
+	MaxIdleConnsPerHost:   100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	ResponseHeaderTimeout: 30 * time.Second,
+}
 
 type Server struct {
 	store *config.Store
@@ -146,6 +163,12 @@ func (s *Server) newReverseProxy() http.Handler {
 		ModifyResponse: func(resp *http.Response) error {
 			return s.modifyResponse(resp)
 		},
+		Transport:     defaultProxyTransport,
+		FlushInterval: 100 * time.Millisecond,
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			log.WithError(err).Warnf("upstream proxy error: %s %s", r.Method, r.URL.String())
+			http.Error(w, "bad gateway", http.StatusBadGateway)
+		},
 	}
 }
 
@@ -193,5 +216,16 @@ func (s *Server) modifyResponse(resp *http.Response) error {
 // If empty, reload endpoint is only accepted from loopback (127.0.0.1 / ::1).
 func (s *Server) Listen(addr string, reloadToken string, afterReload func()) error {
 	log.Info("emby virtual proxy listening on ", addr)
-	return http.ListenAndServe(addr, s.Handler(reloadToken, afterReload))
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           s.Handler(reloadToken, afterReload),
+		ReadHeaderTimeout: 15 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		WriteTimeout:      0, // streaming/transcode responses may run for long durations
+		MaxHeaderBytes:    1 << 20,
+		BaseContext: func(_ net.Listener) context.Context {
+			return context.Background()
+		},
+	}
+	return srv.ListenAndServe()
 }

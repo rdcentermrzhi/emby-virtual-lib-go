@@ -5,6 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Virtual environments
 .venv
@@ -14,14 +17,24 @@ images/
 
 # config
 config.yaml
+config/temp_images/
 
 # debug
 __debug*
 
 .vscode/
+.idea/
 
 .DS_Store
 
 image_done.txt
 
 mediacovergenerator/
+
+# Frontend artifacts
+web/node_modules/
+web/dist/
+
+# VCS / CI metadata
+.git/
+.github/

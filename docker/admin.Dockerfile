@@ -21,4 +21,4 @@ COPY --from=web-builder /src/web/dist ./web/dist
 RUN mkdir -p /app/config /app/images
 
 EXPOSE 8011
-CMD ["python", "-m", "uvicorn", "admin.admin_server:admin_app", "--host", "0.0.0.0", "--port", "8011"]
+ENTRYPOINT ["python", "-m", "uvicorn", "admin.admin_server:admin_app", "--host", "0.0.0.0", "--port", "8011"]

@@ -1,26 +1,27 @@
-version: '3.3'
 services:
   proxy:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/proxy.Dockerfile
+    image: emby-virtual-lib/proxy:local
     container_name: emby-virtual-lib-proxy
-    volumes:
-      - ./images:/app/images
-      - ./config:/app/config
-    ports:
-      - '9098:8000'
-    environment:
-      - TZ=Asia/Shanghai
-      - EMBY_PROXY_RELOAD_TOKEN=change-me-in-production
     restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      EMBY_PROXY_RELOAD_TOKEN: change-me-in-production
+    volumes:
+      - ./config:/app/config
+      - ./images:/app/images
+    ports:
+      - "${PROXY_HOST_PORT:-9098}:${PROXY_CONTAINER_PORT:-8000}"
 
   admin:
     build:
       context: .
-      dockerfile: admin/Dockerfile
+      dockerfile: docker/admin.Dockerfile
+    image: emby-virtual-lib/admin:local
     container_name: emby-virtual-lib-admin
-    working_dir: /app
+    restart: unless-stopped
     environment:
       PYTHONPATH: /app
       TZ: Asia/Shanghai
@@ -30,7 +31,6 @@ services:
       - ./config:/app/config
       - ./images:/app/images
     ports:
-      - '8011:8011'
-    restart: unless-stopped
+      - "${ADMIN_HOST_PORT:-8011}:${ADMIN_CONTAINER_PORT:-8011}"
     depends_on:
       - proxy
