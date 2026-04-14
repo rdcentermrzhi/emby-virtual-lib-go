@@ -1,4 +1,4 @@
-name: Docker
+name: Docker Build
 
 on:
   push:
@@ -8,30 +8,22 @@ on:
       - 'proxy/**'
       - 'admin/**'
       - 'web/**'
+      - 'docker/**'
       - 'proxy/go.mod'
       - 'proxy/go.sum'
-      - 'Dockerfile'
       - 'docker-compose.yml'
       - '.github/workflows/docker-publish.yml'
-      - 'justzerock-mp-plugin'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'proxy/**'
       - 'admin/**'
       - 'web/**'
+      - 'docker/**'
       - 'proxy/go.mod'
       - 'proxy/go.sum'
-      - 'Dockerfile'
       - 'docker-compose.yml'
       - '.github/workflows/docker-publish.yml'
-      - 'justzerock-mp-plugin'
-  schedule:
-    - cron: '36 19 * * *'
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -39,51 +31,47 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - name: proxy
+            dockerfile: docker/proxy.Dockerfile
+          - name: admin
+            dockerfile: docker/admin.Dockerfile
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20
-        with:
-          cosign-release: 'v2.2.4'
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log into registry ${{ env.REGISTRY }}
+      - name: Log in to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
+        uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934
+        uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository }}-${{ matrix.component.name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
 
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
+      - name: Build and publish ${{ matrix.component.name }} image
+        uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.component.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
